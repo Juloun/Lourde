@@ -1,11 +1,12 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Menu, X, Search, ShoppingCart, User, Heart, MessageCircle } from 'lucide-react'
-import { useCart } from '@/components/cart-provider'
+import { useState } from "react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Menu, X, Search, ShoppingCart, Heart, MessageCircle } from "lucide-react"
+import { useCart } from "@/components/cart-provider"
+import { UserMenu } from "@/components/user-menu"
 
 export function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -17,9 +18,7 @@ export function Navigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <span className="font-playfair text-2xl font-bold text-rose-600">
-              LuxeHair
-            </span>
+            <span className="font-playfair text-2xl font-bold text-rose-600">LuxeHair</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -43,11 +42,11 @@ export function Navigation() {
             <Button variant="ghost" size="icon" className="hidden sm:flex">
               <Search className="w-5 h-5" />
             </Button>
-            
+
             <Button variant="ghost" size="icon" className="hidden sm:flex">
               <Heart className="w-5 h-5" />
             </Button>
-            
+
             <Button variant="ghost" size="icon" className="relative">
               <ShoppingCart className="w-5 h-5" />
               {itemCount > 0 && (
@@ -56,22 +55,15 @@ export function Navigation() {
                 </Badge>
               )}
             </Button>
-            
-            <Button variant="ghost" size="icon" className="hidden sm:flex">
-              <User className="w-5 h-5" />
-            </Button>
-            
+
+            <UserMenu />
+
             <Button variant="ghost" size="icon">
               <MessageCircle className="w-5 h-5" />
             </Button>
 
             {/* Mobile menu button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
+            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
               {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
           </div>
@@ -82,51 +74,51 @@ export function Navigation() {
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-200">
           <div className="px-4 py-2 space-y-1">
-            <Link 
-              href="/products" 
+            <Link
+              href="/products"
               className="block px-3 py-2 text-gray-700 hover:text-rose-600 transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Products
             </Link>
-            <Link 
-              href="/about" 
+            <Link
+              href="/about"
               className="block px-3 py-2 text-gray-700 hover:text-rose-600 transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               About
             </Link>
-            <Link 
-              href="/reviews" 
+            <Link
+              href="/reviews"
               className="block px-3 py-2 text-gray-700 hover:text-rose-600 transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Reviews
             </Link>
-            <Link 
-              href="/contact" 
+            <Link
+              href="/contact"
               className="block px-3 py-2 text-gray-700 hover:text-rose-600 transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Contact
             </Link>
             <div className="border-t border-gray-200 pt-2">
-              <Link 
-                href="/search" 
+              <Link
+                href="/search"
                 className="block px-3 py-2 text-gray-700 hover:text-rose-600 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Search
               </Link>
-              <Link 
-                href="/wishlist" 
+              <Link
+                href="/wishlist"
                 className="block px-3 py-2 text-gray-700 hover:text-rose-600 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Wishlist
               </Link>
-              <Link 
-                href="/account" 
+              <Link
+                href="/account"
                 className="block px-3 py-2 text-gray-700 hover:text-rose-600 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >

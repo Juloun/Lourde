@@ -1,131 +1,51 @@
-'use client'
+"use client"
 
-import { useState, useMemo } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Slider } from '@/components/ui/slider'
-import { Star, Heart, ShoppingCart, Filter, Grid, List } from 'lucide-react'
-import { useCart } from '@/components/cart-provider'
-
-const products = [
-  {
-    id: 1,
-    name: 'HD Lace Curly Wig 22"',
-    price: 299,
-    originalPrice: 399,
-    rating: 4.9,
-    reviews: 127,
-    image: '/hd-lace-curly-wig.png',
-    texture: 'curly',
-    laceType: 'hd',
-    length: 22,
-    style: 'long'
-  },
-  {
-    id: 2,
-    name: 'Transparent Lace Body Wave 18"',
-    price: 249,
-    originalPrice: 329,
-    rating: 4.8,
-    reviews: 89,
-    image: '/transparent-lace-body-wave-wig.png',
-    texture: 'body-wave',
-    laceType: 'transparent',
-    length: 18,
-    style: 'medium'
-  },
-  {
-    id: 3,
-    name: 'Bob Cut Straight Wig 12"',
-    price: 199,
-    originalPrice: 259,
-    rating: 4.9,
-    reviews: 156,
-    image: '/bob-cut-lace-wig.png',
-    texture: 'straight',
-    laceType: 'hd',
-    length: 12,
-    style: 'bob'
-  },
-  {
-    id: 4,
-    name: 'Deep Wave Frontal Wig 26"',
-    price: 349,
-    originalPrice: 449,
-    rating: 4.7,
-    reviews: 73,
-    image: '/deep-wave-frontal-wig.png',
-    texture: 'deep-wave',
-    laceType: 'frontal',
-    length: 26,
-    style: 'long'
-  },
-  {
-    id: 5,
-    name: 'Kinky Curly HD Lace 20"',
-    price: 279,
-    originalPrice: 359,
-    rating: 4.8,
-    reviews: 94,
-    image: '/placeholder.svg?height=400&width=300',
-    texture: 'kinky',
-    laceType: 'hd',
-    length: 20,
-    style: 'medium'
-  },
-  {
-    id: 6,
-    name: 'Straight Closure Wig 16"',
-    price: 229,
-    originalPrice: 299,
-    rating: 4.6,
-    reviews: 112,
-    image: '/placeholder.svg?height=400&width=300',
-    texture: 'straight',
-    laceType: 'closure',
-    length: 16,
-    style: 'medium'
-  }
-]
+import { useState, useMemo } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Slider } from "@/components/ui/slider"
+import { Star, Heart, ShoppingCart, Filter, Grid, List } from "lucide-react"
+import { useCart } from "@/components/cart-provider"
+import { useProducts } from "@/hooks/use-products"
+import { LoadingSpinner } from "@/components/loading-spinner"
 
 export default function ProductsPage() {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const { products: allProducts, loading: productsLoading, error, usingFallback } = useProducts()
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [filters, setFilters] = useState({
-    texture: '',
-    laceType: '',
-    style: '',
+    texture: "all",
+    laceType: "all",
+    style: "all",
     priceRange: [0, 500],
-    sortBy: 'featured'
+    sortBy: "featured",
   })
   const { addItem } = useCart()
 
   const filteredProducts = useMemo(() => {
-    let filtered = products.filter(product => {
-      if (filters.texture && product.texture !== filters.texture) return false
-      if (filters.laceType && product.laceType !== filters.laceType) return false
-      if (filters.style && product.style !== filters.style) return false
+    const filtered = allProducts.filter((product) => {
+      if (filters.texture !== "all" && product.texture !== filters.texture) return false
+      if (filters.laceType !== "all" && product.lace_type !== filters.laceType) return false
+      if (filters.style !== "all" && product.style !== filters.style) return false
       if (product.price < filters.priceRange[0] || product.price > filters.priceRange[1]) return false
       return true
     })
 
     // Sort products
     switch (filters.sortBy) {
-      case 'price-low':
+      case "price-low":
         filtered.sort((a, b) => a.price - b.price)
         break
-      case 'price-high':
+      case "price-high":
         filtered.sort((a, b) => b.price - a.price)
         break
-      case 'rating':
+      case "rating":
         filtered.sort((a, b) => b.rating - a.rating)
         break
-      case 'newest':
-        // Assuming newer products have higher IDs
-        filtered.sort((a, b) => b.id - a.id)
+      case "newest":
+        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         break
       default:
         // Keep original order for 'featured'
@@ -133,28 +53,34 @@ export default function ProductsPage() {
     }
 
     return filtered
-  }, [filters])
+  }, [filters, allProducts])
 
-  const handleAddToCart = (product: typeof products[0]) => {
+  const handleAddToCart = (product: (typeof allProducts)[0]) => {
     addItem({
-      id: product.id,
+      id: Number.parseInt(product.id),
       name: product.name,
       price: product.price,
-      image: product.image
+      image: product.image_url,
     })
   }
+
+  if (productsLoading) return <LoadingSpinner />
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-playfair text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Premium Lace Wigs
-          </h1>
-          <p className="text-lg text-gray-600">
-            Discover our complete collection of premium quality lace wigs
-          </p>
+          <h1 className="font-playfair text-3xl md:text-4xl font-bold text-gray-900 mb-4">Premium Lace Wigs</h1>
+          <p className="text-lg text-gray-600">Discover our complete collection of premium quality lace wigs</p>
+          {usingFallback && (
+            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg max-w-2xl">
+              <p className="text-sm text-amber-700">
+                🚀 <strong>Demo Mode:</strong> You're viewing our sample product catalog. To see live inventory, please
+                set up your Supabase database connection.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -169,17 +95,21 @@ export default function ProductsPage() {
               {/* Texture Filter */}
               <div className="space-y-2 mb-6">
                 <Label>Texture</Label>
-                <Select value={filters.texture} onValueChange={(value) => setFilters(prev => ({ ...prev, texture: value }))}>
+                <Select
+                  value={filters.texture}
+                  onValueChange={(value) => setFilters((prev) => ({ ...prev, texture: value }))}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="All Textures" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Textures</SelectItem>
+                    <SelectItem value="all">All Textures</SelectItem>
                     <SelectItem value="straight">Straight</SelectItem>
                     <SelectItem value="curly">Curly</SelectItem>
                     <SelectItem value="body-wave">Body Wave</SelectItem>
                     <SelectItem value="deep-wave">Deep Wave</SelectItem>
                     <SelectItem value="kinky">Kinky</SelectItem>
+                    <SelectItem value="water-wave">Water Wave</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -187,12 +117,15 @@ export default function ProductsPage() {
               {/* Lace Type Filter */}
               <div className="space-y-2 mb-6">
                 <Label>Lace Type</Label>
-                <Select value={filters.laceType} onValueChange={(value) => setFilters(prev => ({ ...prev, laceType: value }))}>
+                <Select
+                  value={filters.laceType}
+                  onValueChange={(value) => setFilters((prev) => ({ ...prev, laceType: value }))}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="All Lace Types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Lace Types</SelectItem>
+                    <SelectItem value="all">All Lace Types</SelectItem>
                     <SelectItem value="hd">HD Lace</SelectItem>
                     <SelectItem value="transparent">Transparent</SelectItem>
                     <SelectItem value="frontal">Frontal</SelectItem>
@@ -204,13 +137,17 @@ export default function ProductsPage() {
               {/* Style Filter */}
               <div className="space-y-2 mb-6">
                 <Label>Style</Label>
-                <Select value={filters.style} onValueChange={(value) => setFilters(prev => ({ ...prev, style: value }))}>
+                <Select
+                  value={filters.style}
+                  onValueChange={(value) => setFilters((prev) => ({ ...prev, style: value }))}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="All Styles" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Styles</SelectItem>
+                    <SelectItem value="all">All Styles</SelectItem>
                     <SelectItem value="bob">Bob Cut</SelectItem>
+                    <SelectItem value="short">Short</SelectItem>
                     <SelectItem value="medium">Medium Length</SelectItem>
                     <SelectItem value="long">Long</SelectItem>
                   </SelectContent>
@@ -219,10 +156,12 @@ export default function ProductsPage() {
 
               {/* Price Range */}
               <div className="space-y-2 mb-6">
-                <Label>Price Range: ${filters.priceRange[0]} - ${filters.priceRange[1]}</Label>
+                <Label>
+                  Price Range: ${filters.priceRange[0]} - ${filters.priceRange[1]}
+                </Label>
                 <Slider
                   value={filters.priceRange}
-                  onValueChange={(value) => setFilters(prev => ({ ...prev, priceRange: value }))}
+                  onValueChange={(value) => setFilters((prev) => ({ ...prev, priceRange: value }))}
                   max={500}
                   min={0}
                   step={10}
@@ -230,16 +169,18 @@ export default function ProductsPage() {
                 />
               </div>
 
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => setFilters({
-                  texture: '',
-                  laceType: '',
-                  style: '',
-                  priceRange: [0, 500],
-                  sortBy: 'featured'
-                })}
+              <Button
+                variant="outline"
+                className="w-full bg-transparent"
+                onClick={() =>
+                  setFilters({
+                    texture: "all",
+                    laceType: "all",
+                    style: "all",
+                    priceRange: [0, 500],
+                    sortBy: "featured",
+                  })
+                }
               >
                 Clear Filters
               </Button>
@@ -250,12 +191,13 @@ export default function ProductsPage() {
           <div className="flex-1">
             {/* Sort and View Controls */}
             <div className="flex items-center justify-between mb-6">
-              <p className="text-gray-600">
-                Showing {filteredProducts.length} products
-              </p>
-              
+              <p className="text-gray-600">Showing {filteredProducts.length} products</p>
+
               <div className="flex items-center gap-4">
-                <Select value={filters.sortBy} onValueChange={(value) => setFilters(prev => ({ ...prev, sortBy: value }))}>
+                <Select
+                  value={filters.sortBy}
+                  onValueChange={(value) => setFilters((prev) => ({ ...prev, sortBy: value }))}
+                >
                   <SelectTrigger className="w-40">
                     <SelectValue />
                   </SelectTrigger>
@@ -270,16 +212,16 @@ export default function ProductsPage() {
 
                 <div className="flex border rounded-lg">
                   <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    variant={viewMode === "grid" ? "default" : "ghost"}
                     size="sm"
-                    onClick={() => setViewMode('grid')}
+                    onClick={() => setViewMode("grid")}
                   >
                     <Grid className="w-4 h-4" />
                   </Button>
                   <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    variant={viewMode === "list" ? "default" : "ghost"}
                     size="sm"
-                    onClick={() => setViewMode('list')}
+                    onClick={() => setViewMode("list")}
                   >
                     <List className="w-4 h-4" />
                   </Button>
@@ -288,19 +230,19 @@ export default function ProductsPage() {
             </div>
 
             {/* Products */}
-            <div className={viewMode === 'grid' 
-              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6' 
-              : 'space-y-4'
-            }>
+            <div className={viewMode === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
               {filteredProducts.map((product) => (
-                <Card key={product.id} className="group cursor-pointer overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                <Card
+                  key={product.id}
+                  className="group cursor-pointer overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300"
+                >
                   <CardContent className="p-0">
-                    {viewMode === 'grid' ? (
+                    {viewMode === "grid" ? (
                       <>
                         <div className="relative">
-                          <div 
+                          <div
                             className="aspect-[3/4] bg-cover bg-center group-hover:scale-105 transition-transform duration-300"
-                            style={{ backgroundImage: `url('${product.image}')` }}
+                            style={{ backgroundImage: `url('${product.image_url}')` }}
                           />
                           <Button
                             size="icon"
@@ -310,44 +252,40 @@ export default function ProductsPage() {
                             <Heart className="w-4 h-4" />
                           </Button>
                         </div>
-                        
+
                         <div className="p-4">
                           <div className="flex items-center gap-1 mb-2">
                             <div className="flex">
                               {[...Array(5)].map((_, i) => (
-                                <Star 
-                                  key={i} 
-                                  className={`w-4 h-4 ${i < Math.floor(product.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
                                 />
                               ))}
                             </div>
-                            <span className="text-sm text-gray-600">({product.reviews})</span>
+                            <span className="text-sm text-gray-600">({product.review_count})</span>
                           </div>
-                          
-                          <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                            {product.name}
-                          </h3>
-                          
+
+                          <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{product.name}</h3>
+
                           <div className="flex items-center gap-2 mb-3">
                             <Badge variant="outline" className="text-xs capitalize">
-                              {product.laceType.replace('-', ' ')}
+                              {product.lace_type.replace("-", " ")}
                             </Badge>
                             <Badge variant="outline" className="text-xs">
                               {product.length}"
                             </Badge>
                           </div>
-                          
+
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-lg text-gray-900">
-                                ${product.price}
-                              </span>
-                              <span className="text-sm text-gray-500 line-through">
-                                ${product.originalPrice}
-                              </span>
+                              <span className="font-bold text-lg text-gray-900">${product.price}</span>
+                              {product.original_price && (
+                                <span className="text-sm text-gray-500 line-through">${product.original_price}</span>
+                              )}
                             </div>
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               className="bg-rose-600 hover:bg-rose-700"
                               onClick={() => handleAddToCart(product)}
                             >
@@ -358,51 +296,47 @@ export default function ProductsPage() {
                       </>
                     ) : (
                       <div className="flex gap-4 p-4">
-                        <div 
+                        <div
                           className="w-32 h-32 bg-cover bg-center rounded-lg flex-shrink-0"
-                          style={{ backgroundImage: `url('${product.image}')` }}
+                          style={{ backgroundImage: `url('${product.image_url}')` }}
                         />
                         <div className="flex-1">
                           <div className="flex items-center gap-1 mb-2">
                             <div className="flex">
                               {[...Array(5)].map((_, i) => (
-                                <Star 
-                                  key={i} 
-                                  className={`w-4 h-4 ${i < Math.floor(product.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
                                 />
                               ))}
                             </div>
-                            <span className="text-sm text-gray-600">({product.reviews})</span>
+                            <span className="text-sm text-gray-600">({product.review_count})</span>
                           </div>
-                          
-                          <h3 className="font-semibold text-gray-900 mb-2">
-                            {product.name}
-                          </h3>
-                          
+
+                          <h3 className="font-semibold text-gray-900 mb-2">{product.name}</h3>
+
                           <div className="flex items-center gap-2 mb-3">
                             <Badge variant="outline" className="text-xs capitalize">
-                              {product.laceType.replace('-', ' ')}
+                              {product.lace_type.replace("-", " ")}
                             </Badge>
                             <Badge variant="outline" className="text-xs">
                               {product.length}"
                             </Badge>
                           </div>
-                          
+
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-lg text-gray-900">
-                                ${product.price}
-                              </span>
-                              <span className="text-sm text-gray-500 line-through">
-                                ${product.originalPrice}
-                              </span>
+                              <span className="font-bold text-lg text-gray-900">${product.price}</span>
+                              {product.original_price && (
+                                <span className="text-sm text-gray-500 line-through">${product.original_price}</span>
+                              )}
                             </div>
                             <div className="flex gap-2">
                               <Button variant="ghost" size="icon">
                                 <Heart className="w-4 h-4" />
                               </Button>
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 className="bg-rose-600 hover:bg-rose-700"
                                 onClick={() => handleAddToCart(product)}
                               >
@@ -421,16 +355,18 @@ export default function ProductsPage() {
             {filteredProducts.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-gray-500 text-lg">No products found matching your filters.</p>
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={() => setFilters({
-                    texture: '',
-                    laceType: '',
-                    style: '',
-                    priceRange: [0, 500],
-                    sortBy: 'featured'
-                  })}
+                <Button
+                  variant="outline"
+                  className="mt-4 bg-transparent"
+                  onClick={() =>
+                    setFilters({
+                      texture: "all",
+                      laceType: "all",
+                      style: "all",
+                      priceRange: [0, 500],
+                      sortBy: "featured",
+                    })
+                  }
                 >
                   Clear All Filters
                 </Button>

@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter, Playfair_Display } from "next/font/google"
 import "./globals.css"
 import { Navigation } from "@/components/navigation"
@@ -14,9 +14,14 @@ export const metadata: Metadata = {
   title: "LuxeHair - Premium Lace Wigs",
   description: "Cheve ki pote fyète, bèlte, ak konfyans. Premium glue lace wigs in all styles and lengths.",
   manifest: "/manifest.json",
-  themeColor: "#be185d",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
   generator: "v0.dev",
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#be185d",
 }
 
 export default function RootLayout({

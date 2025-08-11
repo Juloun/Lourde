@@ -26,9 +26,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         // Determine if Supabase is configured
         const configured = isSupabaseConfigured()
-        setIsDemo(!configured)
 
         if (!configured) {
+          if (typeof window !== "undefined") {
+            // Clear any existing Supabase auth tokens
+            localStorage.removeItem(
+              "sb-" +
+                (process.env.NEXT_PUBLIC_SUPABASE_URL || "localhost").replace(/https?:\/\//, "").replace(/\./g, "-") +
+                "-auth-token",
+            )
+            // Clear any other potential auth storage keys
+            Object.keys(localStorage).forEach((key) => {
+              if (key.startsWith("sb-") && key.includes("auth")) {
+                localStorage.removeItem(key)
+              }
+            })
+          }
+
+          setIsDemo(true)
           setUser(null)
           setLoading(false)
           return
@@ -36,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const supabase = createClient()
 
-        // If client creation failed (e.g., due to environment issues), switch to demo mode
+        // If client creation failed, switch to demo mode
         if (!supabase) {
           setIsDemo(true)
           setUser(null)
@@ -44,23 +59,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return
         }
 
-        // Get initial session
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
+        try {
+          // Get initial session with error handling
+          const {
+            data: { session },
+            error: sessionError,
+          } = await supabase.auth.getSession()
 
-        setUser(session?.user ?? null)
-        setLoading(false)
+          // Handle refresh token errors specifically
+          if (sessionError && sessionError.message?.includes("refresh")) {
+            // Clear the invalid session and continue in demo mode
+            await supabase.auth.signOut()
+            setIsDemo(true)
+            setUser(null)
+            setLoading(false)
+            return
+          }
 
-        // Listen for auth changes
-        const {
-          data: { subscription },
-        } = supabase.auth.onAuthStateChange(async (event, session) => {
           setUser(session?.user ?? null)
           setLoading(false)
-        })
 
-        return () => subscription.unsubscribe()
+          // Listen for auth changes with error handling
+          const {
+            data: { subscription },
+          } = supabase.auth.onAuthStateChange(async (event, session) => {
+            setUser(session?.user ?? null)
+            setLoading(false)
+          })
+
+          return () => subscription.unsubscribe()
+        } catch (authError: any) {
+          if (authError.message?.includes("refresh") || authError.message?.includes("token")) {
+            // Clear any stale tokens and switch to demo mode
+            try {
+              await supabase.auth.signOut()
+            } catch {
+              // Silent failure on signOut
+            }
+            setIsDemo(true)
+          } else {
+            setIsDemo(true)
+          }
+          setUser(null)
+          setLoading(false)
+        }
       } catch (error) {
         // Catch any unexpected errors during initialization and fall back to demo mode
         setIsDemo(true)

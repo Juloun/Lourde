@@ -24,9 +24,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Check if Supabase is configured
-        if (!isSupabaseConfigured()) {
-          setIsDemo(true)
+        // Determine if Supabase is configured
+        const configured = isSupabaseConfigured()
+        setIsDemo(!configured)
+
+        if (!configured) {
           setUser(null)
           setLoading(false)
           return
@@ -34,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const supabase = createClient()
 
-        // If client creation failed, run in demo mode
+        // If client creation failed (e.g., due to environment issues), switch to demo mode
         if (!supabase) {
           setIsDemo(true)
           setUser(null)
@@ -48,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } = await supabase.auth.getSession()
 
         setUser(session?.user ?? null)
-        setIsDemo(false)
+        setLoading(false)
 
         // Listen for auth changes
         const {
@@ -58,10 +60,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false)
         })
 
-        setLoading(false)
-
         return () => subscription.unsubscribe()
       } catch (error) {
+        // Catch any unexpected errors during initialization and fall back to demo mode
         setIsDemo(true)
         setUser(null)
         setLoading(false)
@@ -72,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    if (isDemo || !isSupabaseConfigured()) {
+    if (isDemo) {
       return {
         error: {
           message:
@@ -106,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    if (isDemo || !isSupabaseConfigured()) {
+    if (isDemo) {
       return {
         error: {
           message:
@@ -145,7 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    if (isDemo || !isSupabaseConfigured()) {
+    if (isDemo) {
       return
     }
 
